@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>E0809: Първа паралаксна графика</title>
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+    <script type="importmap">
+		  {
+			"imports": {
+			  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+			  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+			  "vax": "https://boytchev.github.io/CourseVAX/lib/vax.js"
+			}
+		  }
+		</script>
+</head>
+
+<body>
+    <script type="module">
+
+        import * as THREE from "three";
+        import * as VAX from "vax";
+
+        VAX.initParallax(animate);
+
+        var group = new THREE.Group();
+        VAX.scene.add(group);
+        var ground = new THREE.Mesh(
+            new THREE.BoxGeometry(100, 0.5, 100),
+            new THREE.MeshStandardMaterial({ color: 'yellow' })
+        );
+        ground.position.z = -3;
+        ground.position.y = -20;
+        group.add(ground);
+
+        var pool = new THREE.Group();
+        const poolBase = new THREE.Mesh(
+            new THREE.BoxGeometry(40, 6, 60),
+            new THREE.MeshLambertMaterial({ color: 0xdddddd })
+        );
+        poolBase.position.set(-20, -15, -3);
+        pool.add(poolBase);
+
+        const water = new THREE.Mesh(
+            new THREE.PlaneGeometry(38, 56),
+            new THREE.MeshStandardMaterial({
+                color: 0x4dc3ff,
+                transparent: true,
+                opacity: 0.7,
+                roughness: 0.1,
+                metalness: 0
+            })
+        );
+        water.rotation.x = -Math.PI / 2;
+        water.position.set(-20, -11.9, -3);
+        pool.add(water);
+        group.add(pool);
+
+        const slideMat = new THREE.MeshStandardMaterial({
+            color: 0xff6f61,
+            roughness: 0.4,
+            metalness: 0.1,
+            side: THREE.DoubleSide
+        });
+
+        var slide = new THREE.Group();
+        const slide1 = new THREE.Mesh(
+            new THREE.TorusGeometry(
+                22,
+                3.5,
+                16,
+                80,
+                Math.PI * 0.7
+            ),
+            slideMat
+        );
+        slide1.rotation.set(Math.PI / 3, 0, -Math.PI / 2);
+        slide1.position.set(5, 19, -15);
+        slide.add(slide1);
+
+        const slide2 = new THREE.Mesh(
+            new THREE.TorusGeometry(
+                22,
+                3.5,
+                16,
+                80,
+                Math.PI * 0.5
+            ),
+            slideMat
+        );
+
+        slide2.rotation.set(-Math.PI / 3, Math.PI, 0);
+        slide2.position.set(6, -3, -15);
+        slide.add(slide2);
+
+        const slideExit = new THREE.Mesh(
+            new THREE.TorusGeometry(
+                22,
+                3.5,
+                16,
+                80,
+                0.5
+            ),
+            slideMat
+        );
+        slideExit.rotation.set(-Math.PI / 3, Math.PI / 2, Math.PI);
+        slideExit.position.set(-16, -21.5, -27);
+        slide.add(slideExit);
+        group.add(slide);
+
+        var tower = new THREE.Group();
+        const towerMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+        const platformMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
+
+        const towerHeight = 50;
+        const towerRadiusTop = 5;
+        const towerRadiusBottom = 7;
+        const towerSegments = 32;
+
+        const towerGeometry = new THREE.CylinderGeometry(towerRadiusTop, towerRadiusBottom, towerHeight, towerSegments);
+        const towerMesh = new THREE.Mesh(towerGeometry, towerMaterial);
+        towerMesh.position.set(23, 5, -3);
+        tower.add(towerMesh);
+
+        const platformCount = 4;
+        for (let i = 1; i <= platformCount; i++) {
+            const platformHeight = 1;
+            const platformRadius = 7 + 0.1 * 20 * (platformCount - i);
+
+            const platformGeometry = new THREE.CylinderGeometry(platformRadius, platformRadius, platformHeight, 32);
+            const platformMesh = new THREE.Mesh(platformGeometry, platformMaterial);
+
+            platformMesh.position.set(23, (i * towerHeight) / (platformCount + 1) - 23, -3);
+            tower.add(platformMesh);
+        }
+
+        group.add(tower);
+
+        function createHuman(color = 0xffd997) {
+            const human = new THREE.Group();
+            const material = new THREE.MeshStandardMaterial({ color });
+
+            const bodyHeight = 2;
+            const bodyRadius = 0.4;
+            const bodyGeometry = new THREE.CylinderGeometry(bodyRadius, bodyRadius, bodyHeight, 16);
+            const bodyMesh = new THREE.Mesh(bodyGeometry, material);
+            bodyMesh.position.y = bodyHeight / 2 + 1.5; // raise body above ground
+            human.add(bodyMesh);
+
+            const headRadius = 0.5;
+            const headGeometry = new THREE.SphereGeometry(headRadius, 16, 16);
+            const headMesh = new THREE.Mesh(headGeometry, material);
+            headMesh.position.y = bodyMesh.position.y + bodyHeight / 2 + headRadius;
+            human.add(headMesh);
+
+            const armLength = 1.5;
+            const armRadius = 0.15;
+            const armGeometry = new THREE.CylinderGeometry(armRadius, armRadius, armLength, 12);
+
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-(bodyRadius + armRadius), bodyMesh.position.y + 0.5, 0);
+            leftArm.rotation.z = Math.PI / 2.5;
+            human.add(leftArm);
+
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            rightArm.position.set(bodyRadius + armRadius, bodyMesh.position.y + 0.5, 0);
+            rightArm.rotation.z = -Math.PI / 2.5;
+            human.add(rightArm);
+
+            const legLength = 1.5;
+            const legRadius = 0.2;
+            const legGeometry = new THREE.CylinderGeometry(legRadius, legRadius, legLength, 12);
+
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-bodyRadius / 2, legLength / 2, 0);
+            human.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            rightLeg.position.set(bodyRadius / 2, legLength / 2, 0);
+            human.add(rightLeg);
+
+            return human;
+        }
+
+        const human1 = createHuman();
+        human1.position.set(20, -20, 30);
+        human1.scale.set(2, 2, 2);
+        group.add(human1);
+
+        function animate(t) {
+            group.rotation.set(0, t / 4, 0);
+        }
+
+    </script>
+</body>
+
+</html>
