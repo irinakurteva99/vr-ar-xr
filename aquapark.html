@@ -201,6 +201,10 @@
             group.rotation.set(0, t / 4, 0);
         }
 
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
     </script>
 </body>
 
