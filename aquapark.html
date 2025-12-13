@@ -17,13 +17,10 @@
 			}
 		  }
 	</script>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00aaff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon.png">
-
 </head>
+<!-- 
+    Всички текстури са от www.freepik.com
+-->
 
 <body>
     <script type="module">
@@ -31,45 +28,72 @@
         import * as THREE from "three";
         import * as VAX from "vax";
 
-        VAX.initParallax(animate, -3);
-
+        // VAX.initParallax(animate, -3);
+        VAX.init(animate)
         var group = new THREE.Group();
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(50, 50, 50);
+        dirLight.castShadow = true;
+
+        // Optional: configure shadow map size and area
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -50;
+        dirLight.shadow.camera.right = 50;
+        dirLight.shadow.camera.top = 50;
+        dirLight.shadow.camera.bottom = -50;
+        dirLight.shadow.camera.near = 1;
+        dirLight.shadow.camera.far = 200;
+
+        group.add(dirLight);
+
         VAX.scene.add(group);
+        VAX.renderer.shadowMap.enabled = true;
+        const textureLoader = new THREE.TextureLoader();
+
+        const tilesTexture = textureLoader.load('textures/tiles.jpg')
         var ground = new THREE.Mesh(
             new THREE.BoxGeometry(100, 0.5, 100),
-            new THREE.MeshStandardMaterial({ color: 'yellow' })
+            new THREE.MeshStandardMaterial({ map: tilesTexture })
         );
-        ground.position.z = -3;
-        ground.position.y = -20;
+        ground.position.set(0, -20, -3);
+        ground.receiveShadow = true;
         group.add(ground);
 
         var pool = new THREE.Group();
         const poolBase = new THREE.Mesh(
             new THREE.BoxGeometry(40, 6, 60),
-            new THREE.MeshLambertMaterial({ color: 0xdddddd })
-        );
-        poolBase.position.set(-20, -15, -3);
-        pool.add(poolBase);
-
-        const water = new THREE.Mesh(
-            new THREE.PlaneGeometry(38, 56),
             new THREE.MeshStandardMaterial({
-                color: 0x4dc3ff,
-                transparent: true,
-                opacity: 0.7,
-                roughness: 0.1,
+                color: 0xdddddd,
+                roughness: 0.9,
                 metalness: 0
             })
         );
+        poolBase.position.set(-20, -17, -3);
+        poolBase.receiveShadow = true;
+        pool.add(poolBase);
+
+        const waterTexture = textureLoader.load('textures/water.jpg')
+        const water = new THREE.Mesh(
+            new THREE.PlaneGeometry(38, 56),
+            new THREE.MeshStandardMaterial({
+                map: waterTexture,
+                transparent: true,
+                opacity: 0.5,
+                roughness: 0.1
+            })
+        );
         water.rotation.x = -Math.PI / 2;
-        water.position.set(-20, -11.9, -3);
+        water.position.set(-20, -13.9, -3);
+        water.receiveShadow = true;
         pool.add(water);
         group.add(pool);
 
         const slideMat = new THREE.MeshStandardMaterial({
             color: 0xff6f61,
-            roughness: 0.4,
-            metalness: 0.1,
+            roughness: 0.5,
+            metalness: 0.3,
             side: THREE.DoubleSide
         });
 
@@ -119,92 +143,153 @@
         group.add(slide);
 
         var tower = new THREE.Group();
-        const towerMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
-        const platformMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
 
+        const towerTexture = textureLoader.load('textures/tower.jpg')
         const towerHeight = 50;
         const towerRadiusTop = 5;
         const towerRadiusBottom = 7;
         const towerSegments = 32;
 
-        const towerGeometry = new THREE.CylinderGeometry(towerRadiusTop, towerRadiusBottom, towerHeight, towerSegments);
-        const towerMesh = new THREE.Mesh(towerGeometry, towerMaterial);
-        towerMesh.position.set(23, 5, -3);
-        tower.add(towerMesh);
+        const towerElem = new THREE.Mesh(
+            new THREE.CylinderGeometry(towerRadiusTop, towerRadiusBottom, towerHeight, towerSegments),
+            new THREE.MeshStandardMaterial({ map: towerTexture })
+        );
+        towerElem.rotation.y = Math.PI;
+        towerElem.position.set(23, 5, -3);
+        tower.add(towerElem);
 
         const platformCount = 4;
         for (let i = 1; i <= platformCount; i++) {
             const platformHeight = 1;
             const platformRadius = 7 + 0.1 * 20 * (platformCount - i);
 
-            const platformGeometry = new THREE.CylinderGeometry(platformRadius, platformRadius, platformHeight, 32);
-            const platformMesh = new THREE.Mesh(platformGeometry, platformMaterial);
+            const platformElem = new THREE.Mesh(
+                new THREE.CylinderGeometry(platformRadius, platformRadius, platformHeight, 32),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0xd35efc,
+                    roughness: 0.5,
+                    metalness: 0
+                })
+            );
 
-            platformMesh.position.set(23, (i * towerHeight) / (platformCount + 1) - 23, -3);
-            tower.add(platformMesh);
+            platformElem.position.set(23, (i * towerHeight) / (platformCount + 1) - 23, -3);
+            tower.add(platformElem);
         }
 
         group.add(tower);
 
-        function createHuman(color = 0xffd997) {
+        const beam = new THREE.Mesh(
+            new THREE.CylinderGeometry(1, 1, 27, 16),
+            new THREE.MeshStandardMaterial({ color: 0x804518 })
+        );
+        beam.position.set(10, -7, -35);
+        beam.rotation.y = Math.PI / 2;
+        group.add(beam);
+
+        function createHuman() {
             const human = new THREE.Group();
-            const material = new THREE.MeshStandardMaterial({ color });
+            const material = new THREE.MeshStandardMaterial({ color: 0xffd997, roughness: 0.8 });
 
-            const bodyHeight = 2;
-            const bodyRadius = 0.4;
-            const bodyGeometry = new THREE.CylinderGeometry(bodyRadius, bodyRadius, bodyHeight, 16);
-            const bodyMesh = new THREE.Mesh(bodyGeometry, material);
-            bodyMesh.position.y = bodyHeight / 2 + 1.5; // raise body above ground
-            human.add(bodyMesh);
+            const bodyGeometry = new THREE.CylinderGeometry(0.8, 0.8, 2.6, 16);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.position.y = 1.3 + 1.5;
+            human.add(body);
 
-            const headRadius = 0.5;
-            const headGeometry = new THREE.SphereGeometry(headRadius, 16, 16);
-            const headMesh = new THREE.Mesh(headGeometry, material);
-            headMesh.position.y = bodyMesh.position.y + bodyHeight / 2 + headRadius;
-            human.add(headMesh);
+            const headGeometry = new THREE.SphereGeometry(1, 16, 16);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = body.position.y + 1.3 + 1;
+            human.add(head);
 
-            const armLength = 1.5;
-            const armRadius = 0.15;
-            const armGeometry = new THREE.CylinderGeometry(armRadius, armRadius, armLength, 12);
+            const armGeometry = new THREE.CylinderGeometry(0.3, 0.3, 3, 12);
 
             const leftArm = new THREE.Mesh(armGeometry, material);
-            leftArm.position.set(-(bodyRadius + armRadius), bodyMesh.position.y + 0.5, 0);
+            leftArm.position.set(-1.1, body.position.y + 0.5, 0);
             leftArm.rotation.z = Math.PI / 2.5;
             human.add(leftArm);
 
             const rightArm = new THREE.Mesh(armGeometry, material);
-            rightArm.position.set(bodyRadius + armRadius, bodyMesh.position.y + 0.5, 0);
+            rightArm.position.set(1.1, body.position.y + 0.5, 0);
             rightArm.rotation.z = -Math.PI / 2.5;
             human.add(rightArm);
-
-            const legLength = 1.5;
-            const legRadius = 0.2;
-            const legGeometry = new THREE.CylinderGeometry(legRadius, legRadius, legLength, 12);
-
-            const leftLeg = new THREE.Mesh(legGeometry, material);
-            leftLeg.position.set(-bodyRadius / 2, legLength / 2, 0);
-            human.add(leftLeg);
-
-            const rightLeg = new THREE.Mesh(legGeometry, material);
-            rightLeg.position.set(bodyRadius / 2, legLength / 2, 0);
-            human.add(rightLeg);
-
             return human;
         }
 
-        const human1 = createHuman();
-        human1.position.set(20, -20, 30);
-        human1.scale.set(2, 2, 2);
-        group.add(human1);
+        function getRandomPositionInPool() {
+            const x = -35 + Math.random() * 30;
+            const z = Math.random() * 20;
+            return new THREE.Vector3(x, -16, z);
+        }
+
+        const humans = [];
+        for (let i = 0; i < 10; i++) {
+            const position = getRandomPositionInPool();
+            const human = createHuman();
+            human.castShadow = true;
+            human.position.copy(position);
+            humans.push(human);
+            group.add(human);
+        }
+
+        function createTicketHouse() {
+            const house = new THREE.Group();
+
+            const wallGeom = new THREE.BoxGeometry(10, 8, 10);
+            const woodTexture = textureLoader.load('textures/wood.jpg');
+            const wallMat = new THREE.MeshStandardMaterial({ map: woodTexture });
+            const walls = new THREE.Mesh(wallGeom, wallMat);
+            house.add(walls);
+
+            const roofTexture = textureLoader.load('textures/roof.jpg');
+            const roofGeom = new THREE.ConeGeometry(10, 4, 4);
+            const roofMat = new THREE.MeshStandardMaterial({ map: roofTexture });
+            const roof = new THREE.Mesh(roofGeom, roofMat);
+            roof.position.y = 6;
+            roof.rotation.y = Math.PI / 4;
+            house.add(roof);
+
+            const doorGeom = new THREE.BoxGeometry(2, 4, 0.2);
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const door = new THREE.Mesh(doorGeom, doorMat);
+            door.position.set(0, -2, 5 + 0.1);
+            house.add(door);
+
+            return house;
+        }
+
+        const ticketHouse = createTicketHouse();
+        ticketHouse.position.set(30, -16, 30);
+        group.add(ticketHouse);
+
+
+        humans.forEach(h => {
+            h.traverse(child => {
+                if (child.isMesh) child.castShadow = true;
+            });
+        });
+
+        slide.traverse(child => {
+            if (child.isMesh) child.castShadow = true;
+        });
+
+        beam.castShadow = true;
+
+        tower.traverse(child => {
+            if (child.isMesh) child.castShadow = true;
+        });
+        pool.traverse(child => {
+            if (child.isMesh) child.castShadow = true;
+        });
+        ticketHouse.traverse(child => {
+            if (child.isMesh) child.castShadow = true;
+        });
 
         function animate(t) {
             group.rotation.set(0, t / 4, 0);
-        }
+            humans.forEach((h, index) => {
+                h.position.y = -16 + Math.sin(t * 2 + index) * 0.5;
+            });
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
         }
-
     </script>
 </body>
 
