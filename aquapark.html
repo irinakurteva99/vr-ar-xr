@@ -28,15 +28,14 @@
         import * as THREE from "three";
         import * as VAX from "vax";
 
-        // VAX.initParallax(animate, -3);
-        VAX.init(animate)
+        VAX.initParallax(animate, -3);
+        // VAX.init(animate)
         var group = new THREE.Group();
 
         const dirLight = new THREE.DirectionalLight(0xffffff, 1);
         dirLight.position.set(50, 50, 50);
         dirLight.castShadow = true;
 
-        // Optional: configure shadow map size and area
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
         dirLight.shadow.camera.left = -50;
