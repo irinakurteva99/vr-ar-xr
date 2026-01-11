@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<title>В куба</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<script type="importmap">
+		{
+		    "imports": {
+			  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+			  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+			  "vax": "https://boytchev.github.io/CourseVAX/lib/vax.js"
+			}
+		}
+	</script>
+</head>
+
+<body>
+	<script type="module">
+
+		import * as THREE from "three";
+		import * as VAX from "vax";
+
+		VAX.init(animate);
+		VAX.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+		const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+		dirLight.position.set(5, 5, 5);
+		VAX.scene.add(dirLight);
+
+		var group = new THREE.Group();
+		VAX.scene.add(group);
+
+		VAX.scene.background = new THREE.CubeTextureLoader().load([
+			'cube/posx.jpg', 'cube/negx.jpg',
+			'cube/posy.jpg', 'cube/negy.jpg',
+			'cube/posz.jpg', 'cube/negz.jpg']);
+		VAX.scene.background.colorSpace = THREE.LinearSRGBColorSpace;
+		VAX.scene.environment = VAX.scene.background;
+
+		VAX.camera.position.set(0, 0, 0);
+		let lastGamma = null;
+		let lastAlpha = null;
+		let gammaAcc = 0;
+		let alphaAcc = 0;
+
+		function deltaAngle(current, last) {
+			let delta = current - last;
+			delta = (delta + 180) % 360 - 180;
+			if (Math.abs(delta) > 50) {
+				return 0;
+			}
+			return delta;
+		}
+
+		function handleOrientation(event) {
+			const alpha = event.alpha || 0;
+			const beta = event.beta || 0;
+			const gamma = event.gamma || 0;
+
+			if (lastGamma !== null) {
+				const delta = deltaAngle(gamma, lastGamma);
+				gammaAcc += delta;
+			}
+			lastGamma = gamma;
+
+			if (lastAlpha !== null) {
+				const delta = deltaAngle(alpha, lastAlpha);
+				alphaAcc += delta;
+			}
+			lastAlpha = alpha;
+
+			VAX.camera.rotation.order = "YXZ";
+			VAX.camera.rotation.y = THREE.MathUtils.degToRad(alphaAcc);
+			VAX.camera.rotation.x = THREE.MathUtils.degToRad(-gammaAcc);
+		}
+
+		window.addEventListener("deviceorientation", handleOrientation, true);
+
+		const polyhedrons = [];
+		const glassMaterial = new THREE.MeshPhysicalMaterial({
+			color: 0xffffff,
+			transmission: 1,
+			roughness: 0.1,
+			ior: 1.38,
+			thickness: 0.5,
+			envMapIntensity: 0.8,
+			clearcoat: 0.4,
+			clearcoatRoughness: 0.1
+		});
+
+		function addPolyhedron(position) {
+
+			const geometry = new THREE.DodecahedronGeometry(0.7);
+			geometry.computeVertexNormals();
+
+			const mesh = new THREE.Mesh(geometry, glassMaterial.clone());
+
+			mesh.position.copy(position);
+
+			mesh.userData = {
+				spin: new THREE.Vector3(
+					Math.random() * 0.01,
+					Math.random() * 0.01,
+					Math.random() * 0.01
+				)
+			};
+
+			group.add(mesh);
+			polyhedrons.push(mesh);
+		}
+		addPolyhedron(new THREE.Vector3(5.3, 1.2, -6.8));
+		addPolyhedron(new THREE.Vector3(-4.7, -2.1, -5.9));
+		addPolyhedron(new THREE.Vector3(2.8, 4.9, -7.1));
+		addPolyhedron(new THREE.Vector3(-6.1, 3.4, -2.6));
+		addPolyhedron(new THREE.Vector3(6.7, -1.8, -3.9));
+
+		addPolyhedron(new THREE.Vector3(-2.9, -5.6, 4.2));
+		addPolyhedron(new THREE.Vector3(1.4, -3.7, 6.5));
+		addPolyhedron(new THREE.Vector3(5.9, 2.6, 3.8));
+		addPolyhedron(new THREE.Vector3(-5.2, 5.1, 2.9));
+		addPolyhedron(new THREE.Vector3(-1.6, 6.3, -1.9));
+
+		addPolyhedron(new THREE.Vector3(7.1, 3.2, -1.4));
+		addPolyhedron(new THREE.Vector3(-7.4, -0.8, 2.1));
+		addPolyhedron(new THREE.Vector3(3.6, -6.8, -2.7));
+		addPolyhedron(new THREE.Vector3(-3.3, 1.7, 7.4));
+		addPolyhedron(new THREE.Vector3(0.9, 7.2, 3.1));
+
+		addPolyhedron(new THREE.Vector3(-6.6, 4.3, -4.8));
+		addPolyhedron(new THREE.Vector3(4.1, -4.9, 5.6));
+		addPolyhedron(new THREE.Vector3(-1.8, -7.1, -3.4));
+		addPolyhedron(new THREE.Vector3(6.2, -2.9, 1.7));
+		addPolyhedron(new THREE.Vector3(-3.9, 6.6, 0.8));
+
+		function animate() {
+			polyhedrons.forEach(obj => {
+				obj.rotation.x += obj.userData.spin.x;
+				obj.rotation.y += obj.userData.spin.y;
+				obj.rotation.z += obj.userData.spin.z;
+			});
+		}
+
+	</script>
+
+</body>
+
+</html>
